@@ -1,4 +1,4 @@
-{{define "layout"}}
+{{define "base"}}
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -10,7 +10,7 @@
         <title>Movie Nights </title>
     </head>
     <body>
-    {{template "navbar"}}
+    {{template "navbar" .}}
     <section class="section">
         {{block "content" .}}{{end}}
     </section>

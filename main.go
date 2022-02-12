@@ -1,34 +1,29 @@
 package main
 
 import (
+	"github.com/glebarez/sqlite" // Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"html/template"
-	"io"
+	"gorm.io/gorm"
+	"log"
 )
-
-type Template struct {
-	templates *template.Template
-}
-
-func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
 
 func main() {
 
-	t := &Template{
-		templates: template.Must(template.ParseGlob("public/views/*.gohtml")),
+	_, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	e := echo.New()
 
-	e.Renderer = t
+	e.Renderer = buildTemplateRegistry()
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
 	// Routes
+	e.GET("/login", login)
 	e.GET("/", index)
 
 	// Start server
