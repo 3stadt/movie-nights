@@ -6,17 +6,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type db struct {
+type DB struct {
 	conn *gorm.DB
 }
 
-func Open() (*db, error) {
+func Open() (*DB, error) {
 
-	gdb, err := gorm.Open(sqlite.Open("movie-nights.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("movie-nights.db"), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
-	err = gdb.AutoMigrate(
+	err = db.AutoMigrate(
 		models.Genre{},
 		models.Movie{},
 		models.Provider{},
@@ -26,12 +26,12 @@ func Open() (*db, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &db{conn: gdb}, nil
+	return &DB{conn: db}, nil
 }
 
-func (d *db) AddUser(name, password string) {
-	d.conn.Create(models.User{
+func (d *DB) AddUser(name, password string) {
+	d.conn.Create(&models.User{
 		Name:     name,
-		Password: "",
+		Password: password,
 	})
 }
