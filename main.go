@@ -1,18 +1,17 @@
 package main
 
 import (
-	"github.com/glebarez/sqlite" // Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details
+	"github.com/3stadt/movie-nights/db"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"gorm.io/gorm"
 	"log"
 )
 
 func main() {
 
-	_, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	_, err := db.Open()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf(err.Error())
 	}
 
 	e := echo.New()

@@ -5,6 +5,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"html/template"
 	"io"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 type TemplateRegistry struct {
@@ -14,16 +18,24 @@ type TemplateRegistry struct {
 func buildTemplateRegistry() *TemplateRegistry {
 	bp := "public/views/"
 	templates := make(map[string]*template.Template)
-	templates["index"] = template.Must(template.ParseFiles(
-		bp+"layouts/base.gohtml",
-		bp+"partials/navbar.gohtml",
-		bp+"pages/index.gohtml",
-	))
-	templates["login"] = template.Must(template.ParseFiles(
-		bp+"layouts/base.gohtml",
-		bp+"partials/navbar.gohtml",
-		bp+"pages/login.gohtml",
-	))
+
+	err := filepath.Walk(bp+"pages", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+		if info.IsDir() {
+			return nil
+		}
+		templates[strings.TrimSuffix(info.Name(), filepath.Ext(info.Name()))] = template.Must(template.ParseFiles(
+			bp+"layouts/base.gohtml",
+			bp+"partials/navbar.gohtml",
+			bp+"pages/"+info.Name(),
+		))
+		return nil
+	})
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
 	return &TemplateRegistry{
 		templates: templates,
 	}
