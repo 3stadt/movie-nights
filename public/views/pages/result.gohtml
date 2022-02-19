@@ -1,0 +1,33 @@
+{{define "content"}}
+    <div class="container">
+        <h1 class="title">Results</h1>
+        {{if .ErrorMessage}}
+            <h2 class="subtitle">An error occured!</h2>
+            <p>{{.ErrorMessage}}</p>
+        {{else}}
+            <h2 class="subtitle">Search results for: "{{.Expression}}"</h2>
+            <div class="columns">
+                {{range .Results}}
+                    <div class="card">
+                        <div class="card-image">
+                            <figure class="image">
+                                <img src="{{.Image}}" alt="{{.Title}}">
+                            </figure>
+                        </div>
+                        <div class="card-content">
+                            <div class="media">
+                                <div class="media-content">
+                                    <p class="title is-4">{{.Title}}</p>
+                                    <p class="subtitle is-6">{{.Type}}</p>
+                                </div>
+                            </div>
+                            <div class="content">
+                                {{.Description}}
+                            </div>
+                        </div>
+                    </div>
+                {{end}}
+            </div>
+        {{end}}
+    </div>
+{{end}}

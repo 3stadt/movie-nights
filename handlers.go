@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/3stadt/movie-nights/imdb"
 	"net/http"
 
 	"github.com/3stadt/movie-nights/db"
@@ -8,7 +9,8 @@ import (
 )
 
 type Handler struct {
-	DB *db.DB
+	DB      *db.DB
+	ImdbApi imdb.Config
 }
 
 func (h *Handler) index(c echo.Context) error {
@@ -28,4 +30,16 @@ func (h *Handler) doRegister(c echo.Context) error {
 	pass := c.FormValue("password")
 	h.DB.AddUser(user, hash(pass))
 	return c.Render(http.StatusOK, "register_done", nil)
+}
+
+func (h *Handler) result(c echo.Context) error {
+	lang := c.QueryParam("lang")
+	term := c.QueryParam("q")
+	movie, err := h.ImdbApi.SearchMovie(lang, term)
+	if err != nil {
+		return c.Render(http.StatusOK, "result", struct {
+			ErrorMessage string
+		}{err.Error()})
+	}
+	return c.Render(http.StatusOK, "result", movie)
 }

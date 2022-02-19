@@ -1,7 +1,10 @@
 package main
 
 import (
+	"github.com/3stadt/movie-nights/imdb"
+	"gopkg.in/yaml.v3"
 	"log"
+	"os"
 
 	"github.com/3stadt/movie-nights/db"
 	"github.com/labstack/echo/v4"
@@ -9,14 +12,29 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type Config struct {
+	ImdbApiKey string `yaml:"imdb_api_key"`
+}
+
 func main() {
+
+	yamlBytes, err := os.ReadFile("config.yml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	cfg := &Config{}
+	err = yaml.Unmarshal(yamlBytes, cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	gdb, err := db.Open()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
 	h := Handler{
-		DB: gdb,
+		DB:      gdb,
+		ImdbApi: imdb.Config{ApiKey: cfg.ImdbApiKey},
 	}
 
 	e := echo.New()
@@ -30,6 +48,7 @@ func main() {
 	e.Static("/static", "static")
 	e.GET("/login", h.login)
 	e.GET("/register", h.register)
+	e.GET("/result", h.result)
 	e.POST("/register", h.doRegister)
 	e.GET("/", h.index)
 
