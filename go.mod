@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/glebarez/sqlite v1.3.5
 	github.com/labstack/echo/v4 v4.6.3
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gorm.io/gorm v1.22.5

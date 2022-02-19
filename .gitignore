@@ -1,3 +1,5 @@
 /.idea
 /movie-nights.db
 /config.yml
+/static/cache/*
+!/static/cache/.gitkeep

@@ -45,8 +45,8 @@ func (d *DB) GetMovieFromCache(MovieID string) (*imdb.Movie, error) {
 	if m.JSON == "" {
 		return nil, nil
 	}
-	movie := imdb.Movie{}
-	err := json.Unmarshal([]byte(m.JSON), &m)
+	var movie imdb.Movie
+	err := json.Unmarshal([]byte(m.JSON), &movie)
 	return &movie, err
 }
 

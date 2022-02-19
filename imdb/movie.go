@@ -15,4 +15,5 @@ type Movie struct {
 	Runtime       string  `json:"runtimeStr,omitempty"`
 	Genres        []Genre `json:"genreList,omitempty"`
 	ContentRating string  `json:"contentRating,omitempty"`
+	ErrorMessage  string  `json:"errorMessage,omitempty"`
 }
