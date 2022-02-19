@@ -10,6 +10,7 @@ import (
 
 type Handler struct {
 	DB      *db.DB
+	Lang    string
 	ImdbApi imdb.Config
 }
 
@@ -33,13 +34,34 @@ func (h *Handler) doRegister(c echo.Context) error {
 }
 
 func (h *Handler) result(c echo.Context) error {
-	lang := c.QueryParam("lang")
 	term := c.QueryParam("q")
-	movie, err := h.ImdbApi.SearchMovie(lang, term)
+	movie, err := h.ImdbApi.SearchMovie(h.Lang, term)
 	if err != nil {
 		return c.Render(http.StatusOK, "result", struct {
 			ErrorMessage string
 		}{err.Error()})
 	}
 	return c.Render(http.StatusOK, "result", movie)
+}
+
+func (h *Handler) movieDetail(c echo.Context) error {
+	movieID := c.Param("id")
+
+	movie, err := h.DB.GetMovieFromCache(movieID)
+	if err != nil {
+		return c.Render(http.StatusOK, "movie_detail", struct {
+			ErrorMessage string
+		}{err.Error()})
+	}
+	if movie == nil {
+		movie, err = h.ImdbApi.MovieDetail(h.Lang, movieID)
+		if err != nil {
+			return c.Render(http.StatusOK, "movie_detail", struct {
+				ErrorMessage string
+			}{err.Error()})
+		}
+		h.DB.CacheMovie(movie)
+	}
+
+	return c.Render(http.StatusOK, "movie_detail", movie)
 }

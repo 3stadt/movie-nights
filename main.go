@@ -35,6 +35,7 @@ func main() {
 	h := Handler{
 		DB:      gdb,
 		ImdbApi: imdb.Config{ApiKey: cfg.ImdbApiKey},
+		Lang:    "de", // TODO put in config
 	}
 
 	e := echo.New()
@@ -49,6 +50,7 @@ func main() {
 	e.GET("/login", h.login)
 	e.GET("/register", h.register)
 	e.GET("/result", h.result)
+	e.GET("/movie/:id", h.movieDetail)
 	e.POST("/register", h.doRegister)
 	e.GET("/", h.index)
 

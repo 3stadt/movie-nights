@@ -11,7 +11,6 @@ type Config struct {
 	ApiKey string
 }
 
-var movieURL = "https://imdb-api.com/%s/API/Title/%s/%s"        // language, api key, movie id
 var searchURL = "https://imdb-api.com/%s/API/SearchMovie/%s/%s" // language, api key, term
 
 func (c *Config) SearchMovie(lang, term string) (*SearchResult, error) {
