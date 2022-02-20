@@ -22,6 +22,7 @@ import (
 type Config struct {
 	ImdbApiKey   string `yaml:"imdb_api_key"`
 	CookieSecret string `yaml:"cookie_secret"`
+	Locale       string `yaml:"locale"`
 }
 
 func main() {
@@ -43,7 +44,7 @@ func main() {
 	h := Handler{
 		DB:      gdb,
 		ImdbApi: imdb.Config{ApiKey: cfg.ImdbApiKey},
-		Lang:    "de", // TODO put in config
+		Lang:    cfg.Locale,
 	}
 
 	e := echo.New()
@@ -61,6 +62,7 @@ func main() {
 	e.GET("/logout", h.doLogout)
 	e.GET("/register", h.register)
 	e.GET("/result", h.result)
+	e.GET("/admin", h.admin)
 	e.GET("/movie/:id", h.movieDetail)
 	e.POST("/register", h.doRegister)
 	e.GET("/", h.index)

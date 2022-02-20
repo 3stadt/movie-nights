@@ -64,6 +64,7 @@ func (h *Handler) doLogin(c echo.Context) error {
 		})
 	}
 	sess.Values["isLoggedIn"] = true
+	sess.Values["ID"] = user.ID
 	sess.Save(c.Request(), c.Response())
 
 	return c.Render(http.StatusOK, "index", SessionData{IsLoggedIn: isLoggedIn(sess)})
@@ -73,7 +74,22 @@ func (h *Handler) doLogout(c echo.Context) error {
 	sess := getSession(c)
 	sess.Values = make(map[interface{}]interface{})
 	sess.Save(c.Request(), c.Response())
-	return c.Redirect(http.StatusFound, "/")
+	return c.Redirect(http.StatusFound, "/login")
+}
+
+func (h *Handler) admin(c echo.Context) error {
+	sess := getSession(c)
+	if !isLoggedIn(sess) {
+		return c.Render(http.StatusUnauthorized, "login", SessionData{ErrorMessage: "You need to be logged in to do that.", IsLoggedIn: false})
+	}
+	if _, ok := sess.Values["ID"]; !ok {
+		return c.Redirect(http.StatusFound, "/logout")
+	}
+	user := h.DB.GetUserByID(sess.Values["ID"].(uint))
+	if user.Level < 9000 {
+		return c.Render(http.StatusUnauthorized, "index", SessionData{ErrorMessage: "You need to be admin to do that.", IsLoggedIn: false})
+	}
+	return c.Render(http.StatusOK, "admin", SessionData{IsLoggedIn: isLoggedIn(sess)})
 }
 
 func (h *Handler) register(c echo.Context) error {

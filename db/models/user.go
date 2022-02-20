@@ -9,5 +9,6 @@ type User struct {
 	Email    string `gorm:"unique;not null;size:128"`
 	Password string `gorm:"not null"`
 	Active   bool
+	Level    uint
 	Ratings  []*Rating
 }

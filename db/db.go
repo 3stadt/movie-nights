@@ -36,6 +36,7 @@ func (d *DB) AddUser(name, password string) {
 	d.conn.Create(&models.User{
 		Email:    name,
 		Password: password,
+		Level:    100, // Default user level
 	})
 }
 
@@ -64,5 +65,11 @@ func (d *DB) CacheMovie(movie *imdb.Movie) {
 func (d *DB) GetUserByMail(mail string) *models.User {
 	var u models.User
 	d.conn.Where(&models.User{Email: mail, Active: true}).First(&u)
+	return &u
+}
+
+func (d *DB) GetUserByID(id uint) *models.User {
+	var u models.User
+	d.conn.First(&u, id)
 	return &u
 }
