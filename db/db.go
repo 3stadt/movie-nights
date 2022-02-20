@@ -73,3 +73,13 @@ func (d *DB) GetUserByID(id uint) *models.User {
 	d.conn.First(&u, id)
 	return &u
 }
+
+func (d *DB) GetAllUsers() []models.User {
+	var u []models.User
+	d.conn.Find(&u)
+	return u
+}
+
+func (d *DB) SetUserStatus(id uint, active bool) {
+	d.conn.Model(&models.User{}).Where("id = ?", id).Update("active", active)
+}

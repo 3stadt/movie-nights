@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"github.com/3stadt/movie-nights/db/models"
 	"github.com/3stadt/movie-nights/imdb"
 	"golang.org/x/crypto/bcrypt"
 	"image"
@@ -9,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/3stadt/movie-nights/db"
@@ -27,6 +30,7 @@ type SessionData struct {
 	Password       string
 	Results        *imdb.SearchResult
 	Movie          *imdb.Movie
+	Users          []models.User
 	ErrorMessage   string
 	SuccessMessage string
 	IsLoggedIn     bool
@@ -89,7 +93,35 @@ func (h *Handler) admin(c echo.Context) error {
 	if user.Level < 9000 {
 		return c.Render(http.StatusUnauthorized, "index", SessionData{ErrorMessage: "You need to be admin to do that.", IsLoggedIn: false})
 	}
-	return c.Render(http.StatusOK, "admin", SessionData{IsLoggedIn: isLoggedIn(sess)})
+	users := h.DB.GetAllUsers()
+	return c.Render(http.StatusOK, "admin", SessionData{IsLoggedIn: isLoggedIn(sess), Users: users})
+}
+
+func (h *Handler) doAdmin(c echo.Context) error {
+	sess := getSession(c)
+	if !isLoggedIn(sess) {
+		return c.Render(http.StatusUnauthorized, "login", SessionData{ErrorMessage: "You need to be logged in to do that.", IsLoggedIn: false})
+	}
+	if _, ok := sess.Values["ID"]; !ok {
+		return c.Redirect(http.StatusFound, "/logout")
+	}
+	user := h.DB.GetUserByID(sess.Values["ID"].(uint))
+	if user.Level < 9000 {
+		return c.Render(http.StatusUnauthorized, "index", SessionData{ErrorMessage: "You need to be admin to do that.", IsLoggedIn: false})
+	}
+	userID := c.FormValue("id")
+	act := c.FormValue("active")
+	active := true
+	if act == "false" {
+		active = false
+	}
+	u64, err := strconv.ParseUint(userID, 10, 64)
+	if err != nil {
+		fmt.Println(err)
+	}
+	h.DB.SetUserStatus(uint(u64), !active)
+	users := h.DB.GetAllUsers()
+	return c.Render(http.StatusOK, "admin", SessionData{IsLoggedIn: isLoggedIn(sess), Users: users})
 }
 
 func (h *Handler) register(c echo.Context) error {

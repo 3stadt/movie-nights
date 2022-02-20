@@ -63,6 +63,7 @@ func main() {
 	e.GET("/register", h.register)
 	e.GET("/result", h.result)
 	e.GET("/admin", h.admin)
+	e.POST("/admin", h.doAdmin)
 	e.GET("/movie/:id", h.movieDetail)
 	e.POST("/register", h.doRegister)
 	e.GET("/", h.index)
