@@ -1,28 +1,25 @@
 {{define "content"}}
-    <div class="container">
-        <h1>Results</h1>
-        {{if .ErrorMessage}}
-            <h2>An error occured!</h2>
-            <p>{{.ErrorMessage}}</p>
-        {{else}}
-            <h2>Search results for: "{{.Expression}}"</h2>
-            <div class="row row-cols-1 row-cols-md-3 g-4">
-                {{range .Results}}
-                    <div class="col">
-                        <div class="card">
-                            <img src="{{.Image}}"
-                                 class="hover-zoomout"
-                                 alt="{{.Title}}"
-                            >
-                            <div class="card-body">
-                                <h5 class="card-title">{{.Title}}</h5>
-                                <p class="card-text">{{.Description}}</p>
-                                <a href="/movie/{{.MovieID}}" class="btn btn-primary">Select</a>
-                            </div>
+<div class="container">
+    <h1>Results</h1>
+    {{with .Results}}
+        <h2>Search results for: "{{.Expression}}"</h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {{range .Results}}
+                <div class="col">
+                    <div class="card">
+                        <img src="{{.Image}}"
+                             class="hover-zoomout"
+                             alt="{{.Title}}"
+                        >
+                        <div class="card-body">
+                            <h5 class="card-title">{{.Title}}</h5>
+                            <p class="card-text">{{.Description}}</p>
+                            <a href="/movie/{{.MovieID}}" class="btn btn-primary">Select</a>
                         </div>
                     </div>
-                {{end}}
-            </div>
-        {{end}}
-    </div>
-{{end}}
+                </div>
+            {{end}}
+        </div>
+    {{end}}
+    {{end}}
+</div>

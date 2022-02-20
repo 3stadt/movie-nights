@@ -1,1 +1,2 @@
 imdb_api_key: 12345 # register with https://imdb-api.com/
+cookie_secret: 12345 # change to a random string

@@ -34,7 +34,7 @@ func Open() (*DB, error) {
 
 func (d *DB) AddUser(name, password string) {
 	d.conn.Create(&models.User{
-		Name:     name,
+		Email:    name,
 		Password: password,
 	})
 }
@@ -59,4 +59,10 @@ func (d *DB) CacheMovie(movie *imdb.Movie) {
 		MovieID: movie.MovieID,
 		JSON:    string(mJson),
 	})
+}
+
+func (d *DB) GetUserByMail(mail string) *models.User {
+	var u models.User
+	d.conn.Where(&models.User{Email: mail, Active: true}).First(&u)
+	return &u
 }
