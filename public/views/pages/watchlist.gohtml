@@ -1,0 +1,41 @@
+{{define "content"}}
+    <div class="container">
+        <form action="/result" method="get">
+            <div class="input-group mb-3">
+                <input type="text" class="form-control"
+                       placeholder="Search term" aria-label="Search term" aria-describedby="searchbutton"
+                       name="q"
+                >
+                <button class="btn btn-outline-secondary" type="submit" id="searchbutton">Search</button>
+            </div>
+        </form>
+        {{with .Watchlist}}
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col">Cover</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">FSK/PG</th>
+                    <th scope="col">Release date</th>
+                    <th scope="col">Genres</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{range .Movies}}
+                    <tr>
+                        <td><img src="static/cache/{{.ImdbID}}.jpg" height="100px" alt=""></td>
+                        <td>{{.Title}}</td>
+                        <td>{{.FSK}}</td>
+                        <td>{{.ReleaseYear}}</td>
+                        <td>
+                            {{range .Genres}}
+                                <span class="badge bg-secondary">{{.Value}}</span>
+                            {{end}}
+                        </td>
+                    </tr>
+                {{end}}
+                </tbody>
+            </table>
+        {{end}}
+    </div>
+{{end}}

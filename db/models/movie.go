@@ -2,17 +2,18 @@ package models
 
 import (
 	"gorm.io/gorm"
-	"time"
 )
 
 type Movie struct {
 	*gorm.Model
-	Name        string `gorm:"unique;not null;size:128"`
-	FSK         uint8
-	ReleaseYear *time.Time
+	Title       string `gorm:"unique;not null;size:128"`
+	FSK         string
+	ReleaseYear string
 	Genres      []*Genre `gorm:"many2many:movie_genres;"`
 	ProviderID  int
 	Provider    Provider
 	Price       float32
+	ImdbID      string `gorm:"unique"`
 	Ratings     []*Rating
+	WatchLists  []*WatchList `gorm:"many2many:movie_watchlists;"`
 }

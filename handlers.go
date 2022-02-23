@@ -31,6 +31,7 @@ type SessionData struct {
 	Results        *imdb.SearchResult
 	Movie          *imdb.Movie
 	Users          []models.User
+	Watchlist      *models.WatchList
 	ErrorMessage   string
 	SuccessMessage string
 	IsLoggedIn     bool
@@ -215,6 +216,37 @@ func (h *Handler) movieDetail(c echo.Context) error {
 	movie.Image = "/static/cache/" + imgName
 
 	return c.Render(http.StatusOK, "movie_detail", SessionData{Movie: movie, IsLoggedIn: isLoggedIn(sess)})
+}
+
+func (h *Handler) watchlist(c echo.Context) error {
+	sess := getSession(c)
+	if !isLoggedIn(sess) {
+		return c.Render(http.StatusUnauthorized, "login", SessionData{ErrorMessage: "You need to be logged in to do that.", IsLoggedIn: false})
+	}
+
+	id, ok := sess.Values["ID"].(uint)
+	if !ok {
+		return c.Render(http.StatusBadRequest, "index", SessionData{
+			ErrorMessage: fmt.Sprintf("Watchlist for this user does not exist: %v (%T)", sess.Values["ID"], sess.Values["ID"]),
+			IsLoggedIn:   true,
+		})
+	}
+	wl := h.DB.GetWatchList(id)
+	return c.Render(http.StatusOK, "watchlist", SessionData{IsLoggedIn: isLoggedIn(sess), Watchlist: wl})
+}
+
+func (h *Handler) addToWatchList(c echo.Context) error {
+	sess := getSession(c)
+	if !isLoggedIn(sess) {
+		return c.Render(http.StatusUnauthorized, "login", SessionData{ErrorMessage: "You need to be logged in to do that.", IsLoggedIn: false})
+	}
+	MovieID := c.FormValue("movie-id")
+	movie, err := h.DB.GetMovieFromCache(MovieID)
+	if err != nil {
+		return c.Render(http.StatusInternalServerError, "watchlist", SessionData{ErrorMessage: err.Error(), IsLoggedIn: true})
+	}
+	h.DB.AddMovieToWatchList(movie, sess.Values["ID"].(uint))
+	return c.Redirect(http.StatusFound, "/watchlist")
 }
 
 func cacheImage(URL, fileName string) error {

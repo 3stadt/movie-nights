@@ -61,11 +61,14 @@ func main() {
 	e.POST("/login", h.doLogin)
 	e.GET("/logout", h.doLogout)
 	e.GET("/register", h.register)
+	e.POST("/register", h.doRegister)
 	e.GET("/result", h.result)
 	e.GET("/admin", h.admin)
 	e.POST("/admin", h.doAdmin)
 	e.GET("/movie/:id", h.movieDetail)
-	e.POST("/register", h.doRegister)
+	e.GET("/watchlist", h.watchlist)
+	e.POST("/add-to-watchlist", h.addToWatchList)
+
 	e.GET("/", h.index)
 
 	// Start server

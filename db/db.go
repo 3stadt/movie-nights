@@ -83,3 +83,33 @@ func (d *DB) GetAllUsers() []models.User {
 func (d *DB) SetUserStatus(id uint, active bool) {
 	d.conn.Model(&models.User{}).Where("id = ?", id).Update("active", active)
 }
+
+func (d *DB) GetWatchList(id uint) *models.WatchList {
+	wl := models.WatchList{}
+	d.conn.Preload("Movies").Preload("Movies.Genres").Where(&models.WatchList{UserID: id}).First(&wl)
+	if wl.UserID == 0 {
+		d.conn.Create(&models.WatchList{
+			UserID: id,
+		})
+		d.conn.Where(&models.WatchList{UserID: id}).First(&wl)
+	}
+	return &wl
+}
+
+func (d *DB) AddMovieToWatchList(i *imdb.Movie, userID uint) {
+	wl := models.WatchList{}
+	d.conn.Where(&models.WatchList{UserID: userID}).First(&wl)
+	if wl.UserID == 0 {
+		d.conn.Create(&models.WatchList{
+			UserID: userID,
+		})
+		d.conn.Where(&models.WatchList{UserID: userID}).First(&wl)
+	}
+	wl.Movies = append(wl.Movies, models.Movie{
+		Title:       i.Title,
+		FSK:         i.ContentRating,
+		ReleaseYear: i.ReleaseDate,
+		ImdbID:      i.MovieID, // TODO ADD GENRES and additional data as price, provider
+	})
+	d.conn.Model(&wl).Updates(wl)
+}
