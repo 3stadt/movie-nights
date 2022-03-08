@@ -15,5 +15,6 @@ type Movie struct {
 	Price       float32
 	ImdbID      string `gorm:"unique"`
 	Ratings     []*Rating
-	WatchLists  []*WatchList `gorm:"many2many:movie_watchlists;"`
+	WatchLists  []*WatchList  `gorm:"many2many:movie_watchlists;"`
+	MovieNights []*MovieNight `gorm:"many2many:movie_genres;"`
 }

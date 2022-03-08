@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/3stadt/movie-nights/db/models"
 	"github.com/3stadt/movie-nights/imdb"
+	"github.com/gorilla/sessions"
+	"github.com/labstack/echo-contrib/session"
 	"golang.org/x/crypto/bcrypt"
 	"image"
 	"image/jpeg"
@@ -32,23 +34,25 @@ type SessionData struct {
 	Movie          *imdb.Movie
 	Users          []models.User
 	Watchlist      *models.WatchList
+	MovieNights    []models.MovieNight
+	MovieNight     *models.MovieNight
 	ErrorMessage   string
 	SuccessMessage string
 	IsLoggedIn     bool
 }
 
 func (h *Handler) index(c echo.Context) error {
-	sess := getSession(c)
-	return c.Render(http.StatusOK, "index", SessionData{IsLoggedIn: isLoggedIn(sess)})
+	sess := h.getSession(c)
+	return c.Render(http.StatusOK, "index", SessionData{IsLoggedIn: isLoggedIn(sess, h.DB)})
 }
 
 func (h *Handler) login(c echo.Context) error {
-	getSession(c)
+	h.getSession(c)
 	return c.Render(http.StatusOK, "login", nil)
 }
 
 func (h *Handler) doLogin(c echo.Context) error {
-	sess := getSession(c)
+	sess := h.getSession(c)
 	mail := c.FormValue("email")
 	pass := c.FormValue("password")
 	if !validEmail(mail) {
@@ -72,19 +76,19 @@ func (h *Handler) doLogin(c echo.Context) error {
 	sess.Values["ID"] = user.ID
 	sess.Save(c.Request(), c.Response())
 
-	return c.Render(http.StatusOK, "index", SessionData{IsLoggedIn: isLoggedIn(sess)})
+	return c.Render(http.StatusOK, "index", SessionData{IsLoggedIn: isLoggedIn(sess, h.DB)})
 }
 
 func (h *Handler) doLogout(c echo.Context) error {
-	sess := getSession(c)
+	sess := h.getSession(c)
 	sess.Values = make(map[interface{}]interface{})
 	sess.Save(c.Request(), c.Response())
 	return c.Redirect(http.StatusFound, "/login")
 }
 
 func (h *Handler) admin(c echo.Context) error {
-	sess := getSession(c)
-	if !isLoggedIn(sess) {
+	sess := h.getSession(c)
+	if !isLoggedIn(sess, h.DB) {
 		return c.Render(http.StatusUnauthorized, "login", SessionData{ErrorMessage: "You need to be logged in to do that.", IsLoggedIn: false})
 	}
 	if _, ok := sess.Values["ID"]; !ok {
@@ -95,12 +99,12 @@ func (h *Handler) admin(c echo.Context) error {
 		return c.Render(http.StatusUnauthorized, "index", SessionData{ErrorMessage: "You need to be admin to do that.", IsLoggedIn: false})
 	}
 	users := h.DB.GetAllUsers()
-	return c.Render(http.StatusOK, "admin", SessionData{IsLoggedIn: isLoggedIn(sess), Users: users})
+	return c.Render(http.StatusOK, "admin", SessionData{IsLoggedIn: isLoggedIn(sess, h.DB), Users: users})
 }
 
 func (h *Handler) doAdmin(c echo.Context) error {
-	sess := getSession(c)
-	if !isLoggedIn(sess) {
+	sess := h.getSession(c)
+	if !isLoggedIn(sess, h.DB) {
 		return c.Render(http.StatusUnauthorized, "login", SessionData{ErrorMessage: "You need to be logged in to do that.", IsLoggedIn: false})
 	}
 	if _, ok := sess.Values["ID"]; !ok {
@@ -122,16 +126,16 @@ func (h *Handler) doAdmin(c echo.Context) error {
 	}
 	h.DB.SetUserStatus(uint(u64), !active)
 	users := h.DB.GetAllUsers()
-	return c.Render(http.StatusOK, "admin", SessionData{IsLoggedIn: isLoggedIn(sess), Users: users})
+	return c.Render(http.StatusOK, "admin", SessionData{IsLoggedIn: isLoggedIn(sess, h.DB), Users: users})
 }
 
 func (h *Handler) register(c echo.Context) error {
-	sess := getSession(c)
-	return c.Render(http.StatusOK, "register", SessionData{IsLoggedIn: isLoggedIn(sess)})
+	sess := h.getSession(c)
+	return c.Render(http.StatusOK, "register", SessionData{IsLoggedIn: isLoggedIn(sess, h.DB)})
 }
 
 func (h *Handler) doRegister(c echo.Context) error {
-	sess := getSession(c)
+	sess := h.getSession(c)
 	mail := c.FormValue("email")
 	pass := c.FormValue("password")
 	if !validEmail(mail) {
@@ -149,18 +153,18 @@ func (h *Handler) doRegister(c echo.Context) error {
 		})
 	}
 	h.DB.AddUser(mail, hash(pass))
-	return c.Render(http.StatusOK, "register_done", SessionData{IsLoggedIn: isLoggedIn(sess)})
+	return c.Render(http.StatusOK, "register_done", SessionData{IsLoggedIn: isLoggedIn(sess, h.DB)})
 }
 
 func (h *Handler) result(c echo.Context) error {
-	sess := getSession(c)
-	if !isLoggedIn(sess) {
+	sess := h.getSession(c)
+	if !isLoggedIn(sess, h.DB) {
 		return c.Render(http.StatusUnauthorized, "login", SessionData{ErrorMessage: "You need to be logged in to do that.", IsLoggedIn: false})
 	}
 	term := c.QueryParam("q")
 	results, err := h.ImdbApi.SearchMovie(h.Lang, term)
 	if err != nil {
-		return c.Render(http.StatusOK, "result", SessionData{ErrorMessage: err.Error(), IsLoggedIn: isLoggedIn(sess)})
+		return c.Render(http.StatusOK, "result", SessionData{ErrorMessage: err.Error(), IsLoggedIn: isLoggedIn(sess, h.DB)})
 	}
 
 	for _, res := range results.Results {
@@ -171,19 +175,19 @@ func (h *Handler) result(c echo.Context) error {
 		if errors.Is(err, os.ErrNotExist) {
 			err = cacheImage(res.Image, imgName)
 			if err != nil {
-				return c.Render(http.StatusOK, "movie_detail", SessionData{ErrorMessage: err.Error(), IsLoggedIn: isLoggedIn(sess)})
+				return c.Render(http.StatusOK, "movie_detail", SessionData{ErrorMessage: err.Error(), IsLoggedIn: isLoggedIn(sess, h.DB)})
 			}
 		}
 
 		res.Image = "/static/cache/" + imgName
 	}
 
-	return c.Render(http.StatusOK, "result", SessionData{Results: results, IsLoggedIn: isLoggedIn(sess)})
+	return c.Render(http.StatusOK, "result", SessionData{Results: results, IsLoggedIn: isLoggedIn(sess, h.DB)})
 }
 
 func (h *Handler) movieDetail(c echo.Context) error {
-	sess := getSession(c)
-	if !isLoggedIn(sess) {
+	sess := h.getSession(c)
+	if !isLoggedIn(sess, h.DB) {
 		return c.Render(http.StatusUnauthorized, "login", SessionData{ErrorMessage: "You need to be logged in to do that.", IsLoggedIn: false})
 	}
 	movieID := c.Param("id")
@@ -197,7 +201,7 @@ func (h *Handler) movieDetail(c echo.Context) error {
 	if movie == nil {
 		movie, err = h.ImdbApi.MovieDetail(h.Lang, movieID)
 		if err != nil {
-			return c.Render(http.StatusOK, "movie_detail", SessionData{ErrorMessage: err.Error(), IsLoggedIn: isLoggedIn(sess)})
+			return c.Render(http.StatusOK, "movie_detail", SessionData{ErrorMessage: err.Error(), IsLoggedIn: isLoggedIn(sess, h.DB)})
 		}
 		h.DB.CacheMovie(movie)
 	}
@@ -209,18 +213,18 @@ func (h *Handler) movieDetail(c echo.Context) error {
 	if errors.Is(err, os.ErrNotExist) {
 		err = cacheImage(movie.Image, imgName)
 		if err != nil {
-			return c.Render(http.StatusOK, "movie_detail", SessionData{ErrorMessage: err.Error(), IsLoggedIn: isLoggedIn(sess)})
+			return c.Render(http.StatusOK, "movie_detail", SessionData{ErrorMessage: err.Error(), IsLoggedIn: isLoggedIn(sess, h.DB)})
 		}
 	}
 
 	movie.Image = "/static/cache/" + imgName
 
-	return c.Render(http.StatusOK, "movie_detail", SessionData{Movie: movie, IsLoggedIn: isLoggedIn(sess)})
+	return c.Render(http.StatusOK, "movie_detail", SessionData{Movie: movie, IsLoggedIn: isLoggedIn(sess, h.DB)})
 }
 
 func (h *Handler) watchlist(c echo.Context) error {
-	sess := getSession(c)
-	if !isLoggedIn(sess) {
+	sess := h.getSession(c)
+	if !isLoggedIn(sess, h.DB) {
 		return c.Render(http.StatusUnauthorized, "login", SessionData{ErrorMessage: "You need to be logged in to do that.", IsLoggedIn: false})
 	}
 
@@ -232,12 +236,12 @@ func (h *Handler) watchlist(c echo.Context) error {
 		})
 	}
 	wl := h.DB.GetWatchList(id)
-	return c.Render(http.StatusOK, "watchlist", SessionData{IsLoggedIn: isLoggedIn(sess), Watchlist: wl})
+	return c.Render(http.StatusOK, "watchlist", SessionData{IsLoggedIn: isLoggedIn(sess, h.DB), Watchlist: wl})
 }
 
 func (h *Handler) addToWatchList(c echo.Context) error {
-	sess := getSession(c)
-	if !isLoggedIn(sess) {
+	sess := h.getSession(c)
+	if !isLoggedIn(sess, h.DB) {
 		return c.Render(http.StatusUnauthorized, "login", SessionData{ErrorMessage: "You need to be logged in to do that.", IsLoggedIn: false})
 	}
 	MovieID := c.FormValue("movie-id")
@@ -278,4 +282,31 @@ func cacheImage(URL, fileName string) error {
 	err = jpeg.Encode(file, newImage, nil)
 
 	return nil
+}
+
+func (h *Handler) movieNights(c echo.Context) error {
+	sess := h.getSession(c)
+	if !isLoggedIn(sess, h.DB) {
+		return c.Render(http.StatusUnauthorized, "login", SessionData{ErrorMessage: "You need to be logged in to do that.", IsLoggedIn: false})
+	}
+	mn := h.DB.GetAllMovieNights()
+	return c.Render(http.StatusOK, "movie_nights", SessionData{IsLoggedIn: isLoggedIn(sess, h.DB), MovieNights: mn})
+}
+
+func (h *Handler) getSession(c echo.Context) *sessions.Session {
+	sess, _ := session.Get("movie-nights", c)
+	id, ok := sess.Values["ID"]
+	if ok {
+		u := h.DB.GetUserByID(id.(uint))
+		if !u.Active {
+			sess.Values = map[interface{}]interface{}{}
+		}
+	}
+	sess.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 7,
+		HttpOnly: true,
+	}
+	sess.Save(c.Request(), c.Response())
+	return sess
 }

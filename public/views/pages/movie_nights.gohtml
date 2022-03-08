@@ -1,0 +1,25 @@
+{{define "content"}}
+    <div class="container">
+        <h1>Movie Nights</h1>
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Date</th>
+                <th scope="col">Topic</th>
+                <th scope="col">Movie count</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{ with .MovieNights }}
+                <tr>
+                    <td>{{.ID}}</td>
+                    <td>{{.Date}}</td>
+                    <td>{{.Topic}}</td>
+                    <td>{{.MovieCount}}</td>
+                </tr>
+            {{ end }}
+            </tbody>
+        </table>
+    </div>
+{{end}}

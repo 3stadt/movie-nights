@@ -25,6 +25,8 @@ type Config struct {
 	Locale       string `yaml:"locale"`
 }
 
+var h Handler
+
 func main() {
 
 	yamlBytes, err := os.ReadFile("config.yml")
@@ -66,6 +68,7 @@ func main() {
 	e.GET("/admin", h.admin)
 	e.POST("/admin", h.doAdmin)
 	e.GET("/movie/:id", h.movieDetail)
+	e.GET("/movie-nights", h.movieNights)
 	e.GET("/watchlist", h.watchlist)
 	e.POST("/add-to-watchlist", h.addToWatchList)
 
@@ -100,24 +103,21 @@ func hash(pwd string) string {
 	return string(hash)
 }
 
-func getSession(c echo.Context) *sessions.Session {
-	sess, _ := session.Get("movie-nights", c)
-	sess.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   86400 * 7,
-		HttpOnly: true,
-	}
-	sess.Save(c.Request(), c.Response())
-	return sess
-}
-
 func validEmail(email string) bool {
 	_, err := mail.ParseAddress(email)
 	return err == nil
 }
 
-func isLoggedIn(sess *sessions.Session) bool {
+func isLoggedIn(sess *sessions.Session, d *db.DB) bool {
 	if loggedIn, ok := sess.Values["isLoggedIn"]; ok {
+		if _, ok := sess.Values["ID"]; !ok {
+			return false
+		}
+		u := d.GetUserByID(sess.Values["ID"].(uint))
+		if !u.Active {
+			return false
+		}
+
 		return loggedIn.(bool)
 	}
 	return false

@@ -6,6 +6,7 @@ import (
 	"github.com/3stadt/movie-nights/imdb"
 	"github.com/glebarez/sqlite" // Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details
 	"gorm.io/gorm"
+	"time"
 )
 
 type DB struct {
@@ -25,6 +26,7 @@ func Open() (*DB, error) {
 		models.Rating{},
 		models.User{},
 		models.ImdbMovie{},
+		models.MovieNight{},
 	)
 	if err != nil {
 		return nil, err
@@ -37,6 +39,27 @@ func (d *DB) AddUser(name, password string) {
 		Email:    name,
 		Password: password,
 		Level:    100, // Default user level
+	})
+}
+
+func (d *DB) GetAllMovieNights() []models.MovieNight {
+	var mn []models.MovieNight
+	d.conn.Find(&mn)
+	return mn
+}
+
+func (d *DB) CreateMovieNight(topic string, date time.Time) {
+	mn := models.MovieNight{
+		Date:  date,
+		Topic: topic,
+	}
+	d.conn.Create(mn)
+}
+
+func (d *DB) AddMovieToMovieNight(movieNightId uint, imdbId string) error {
+	movieNight := d.conn.Where(&models.MovieNight{}, movieNightId).Association("Movies")
+	return movieNight.Append(&models.Movie{
+		ImdbID: imdbId,
 	})
 }
 
